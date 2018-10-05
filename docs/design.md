@@ -13,7 +13,7 @@ Design of a DIY Water Depth (Distance) Sensor
 
 ## Cost
 The above parts together cost $311.  Adding an extra $30 for miscellaneous wires, screws cable glands, etc. and 10% for sales tax, and the total estimated cost is about $375.
-Compare to total cost of Ott Ecolog 800 3G ($2,990) or In-Situ Tube 300 + Rugged Troll 200 ($2,400) – one-sixth to one-eight the cost, or savings per unit of between $2,025 and $2,615 (not including the cost of custom read-out hardware for the Ott and In-Situ solutions, usually ~$300/per user).
+Compare to total cost of Ott or In-Situ hardware, between $2,400 and $3,000; this solution is potentially one-sixth to one-eight the cost, or savings per unit of between $2,025 and $2,615 (not including the cost of custom read-out hardware for the proprietary solutions, usually ~$300/per user).
 
 ## Layout
 These are initial thoughts – the final layout will have to be subject to change.
@@ -30,6 +30,7 @@ Breakout pins on the left, Arduino pins on the right.
 - DO - MISO (10)
 - CLK - SCK (9)
 - GND - GND
+- 5V - 5V
 
 CD and 3V left disconnected.
 
@@ -46,3 +47,4 @@ Sensor pins on the left, Arduino pins on the right.
 ## Background Reading and Reference
 - [SPI Basics](https://learn.sparkfun.com/tutorials/serial-peripheral-interface-spi) (SPI is the SD card interface)
 - [MicroSD Breakout Tutorial](https://learn.adafruit.com/adafruit-micro-sd-breakout-board-card-tutorial/arduino-wiring)
+- [u-blox SARA-201 Modem Reference](https://www.u-blox.com/sites/default/files/u-blox-CEL_ATCommands_%28UBX-13002752%29.pdf)
