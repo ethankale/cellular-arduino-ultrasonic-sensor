@@ -89,87 +89,52 @@ void setup() {
   myFile.close();
   
   // connect to the network
-  cmd = "AT";
-  result = sendModemCmd(cmd);
-
   cmd = "AT+CREG?";
   result = sendModemCmd(cmd);
 
-  // wait to try & connect until there's a signal.
-  //while (signal_strength == 99) {
-  //  cmd = "AT+CSQ";  
-  //  result = sendModemCmd(cmd);
-  
-  //  substr = result.substring(result.indexOf(',')-2,result.indexOf(','));
-  //  signal_strength = substr.toInt();
-  //  delay(1000);
-  //}
-  
-  //Serial.println(signal_strength);
+  connection = connectGSM(apn, usr, pwd, 15);
+  Serial.println(connection);
 
-  
-  cmd = "AT+UPSD=0,1,\"" + apn + "\"";
-  result = sendModemCmd(cmd, 10, 0);
-    
-  cmd = "AT+UPSD=0,2,\"" + usr + "\"";
-  result = sendModemCmd(cmd, 10, 0);
-    
-  cmd = "AT+UPSD=0,3,\"" + pwd + "\"";
-  result = sendModemCmd(cmd, 10, 0);
-      
-  cmd = "AT+UPSDA=2,1";
-  result = sendModemCmd(cmd);
-
-  // Make the connection
-  i = 0;
-  connection = "ERROR";
-  while (connection == "ERROR") {
-    cmd = "AT+UPSDA=2,3";
-    result = sendModemCmd(cmd, 10, 0);
-  
-    connection = result.substring(12);
-    connection.trim();
-    Serial.println(connection);
-    delay(1000);
-    i += 1;
-    if (i > 15) {
-      break;
-    }
-  }
-
+  // Unconvinced that this delay is necessary
   delay(2000);
 
-  // Configure FTP
-  cmd = "AT+UFTP=1,\"" + ftp_url + "\"";
-  result = sendModemCmd(cmd);
+  // What's the time?
+  sendModemCmd("AT+CCLK?");
 
-  cmd = "AT+UFTP=2,\"" + ftp_usr + "\"";
-  result = sendModemCmd(cmd);
-
-  cmd = "AT+UFTP=3,\"" + ftp_pwd + "\"";
-  result = sendModemCmd(cmd);
-
-  cmd = "AT+UFTP=6,1";
-  result = sendModemCmd(cmd);
+  connection = connectFTP(ftp_url, ftp_usr, ftp_pwd, 15);
+  Serial.println(connection);
   
-  cmd = "AT+UFTP=5,30";
-  result = sendModemCmd(cmd);
+  // Configure FTP
+  //cmd = "AT+UFTP=1,\"" + ftp_url + "\"";
+  //result = sendModemCmd(cmd);
+
+  //cmd = "AT+UFTP=2,\"" + ftp_usr + "\"";
+  //result = sendModemCmd(cmd);
+
+  //cmd = "AT+UFTP=3,\"" + ftp_pwd + "\"";
+  //result = sendModemCmd(cmd);
+
+  //cmd = "AT+UFTP=6,1";
+  //result = sendModemCmd(cmd);
+  
+  //cmd = "AT+UFTP=5,30";
+  //result = sendModemCmd(cmd);
 
   // Connect to FTP and manipulate files
-  cmd = "AT+UFTPC=1";
-  SerialGSM.println(cmd);
-  i = 0;
-  while (i < 15) {
-    delay(500);
-    String response = SerialGSM.readString();
-    response.trim();
-    if (response.length() > 0) {
-      Serial.println(response);
-      if (response.substring(0,8) == "+UUFTPCR") { break; }
-    }
-    i +=1;
-    Serial.println(i);
-  }
+  //cmd = "AT+UFTPC=1";
+  //SerialGSM.println(cmd);
+  //i = 0;
+  //while (i < 15) {
+  //  delay(500);
+  //  String response = SerialGSM.readString();
+  //  response.trim();
+  //  if (response.length() > 0) {
+  //    Serial.println(response);
+  //    if (response.substring(0,8) == "+UUFTPCR") { break; }
+  //  }
+  //  i +=1;
+  //  Serial.println(i);
+  //}
 
   //cmd = "AT+UFTPC=14,\"" + ftp_dir + "\"";
   //result = sendModemCmd(cmd);
@@ -201,6 +166,78 @@ void setup() {
 
 void loop() {
   ;
+}
+
+String connectGSM(String apn, String usr, String pwd, int timeout_seconds){
+  SerialGSM.println("AT+UPSD=0,1,\"" + apn + "\"");
+  SerialGSM.println("AT+UPSD=0,2,\"" + usr + "\"");
+  SerialGSM.println("AT+UPSD=0,3,\"" + pwd + "\"");
+  SerialGSM.println("AT+UPSDA=2,1");
+
+  delay(10);
+
+  // Very important; have to empty the SerialGSM buffer before
+  //  the loop listening for the ERROR response.
+  String result = SerialGSM.readString();
+  //Serial.println(result);
+  Serial.print("Connecting to GSM...");
+  i = 0;
+  String connection = "ERROR";
+  while (connection == "ERROR") {
+    SerialGSM.println("AT+UPSDA=2,3");
+    while (!SerialGSM.available()) { ; }
+    delay(10);
+    result = SerialGSM.readString();
+  
+    connection = result.substring(12);
+    connection.trim();
+    //Serial.println(connection);
+    delay(500);
+    i += 1;
+    if (i > (timeout_seconds*2)) {
+      //Serial.println("Could not connect in the time given (" + String(timeout_seconds) + ").");
+      return "Could not connect in the time given (" + String(timeout_seconds) + " seconds).";
+    }
+    Serial.print(".");
+  }
+  return "Connection established!";
+}
+
+String connectFTP(String url, String usr, String pwd, int timeout_seconds){
+  SerialGSM.println("AT+UFTP=1,\"" + url + "\"");
+  delay(10);
+  SerialGSM.println("AT+UFTP=2,\"" + usr + "\"");
+  delay(10);
+  SerialGSM.println("AT+UFTP=3,\"" + pwd + "\"");
+  delay(10);
+  SerialGSM.println("AT+UFTP=6,1");
+  delay(10);
+  SerialGSM.println("AT+UFTP=5,30");
+  delay(10);
+  SerialGSM.println("AT+UFTPC=1");
+  delay(10);
+  // Very important; have to empty the SerialGSM buffer before
+  //  the loop.
+  String result = SerialGSM.readString();
+  //Serial.println(result);
+  
+  Serial.print("Connecting...");
+  
+  i = 0;
+  while (i < (timeout_seconds*2)) {
+    delay(500);
+    String response = SerialGSM.readString();
+    response.trim();
+    if (response.length() > 0) {
+      //Serial.println(response);
+      if (response.substring(0,8) == "+UUFTPCR") { 
+        return "Connected to FTP Server!";
+      }
+    }
+    i +=1;
+    Serial.print(".");
+  }
+  return "Could not connect to FTP server in " + String(timeout_seconds) + " seconds.";  
 }
 
 String sendModemCmd(String cmd, int ms_delay, int is_verbose){
